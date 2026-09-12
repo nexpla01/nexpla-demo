@@ -10,12 +10,11 @@ export default async function handler(req, res) {
 
     const payload = {
       text: String(text).slice(0, 1500),
-      model: 'bulbul:v2',
-      speaker: 'anushka',
+      model: 'bulbul:v3',
+      speaker: 'ishita',
       language_code: 'en-IN',
       speech_sample_rate: 22050,
       output_audio_codec: 'wav',
-      enable_preprocessing: true
     };
 
     const response = await fetch('https://api.sarvam.ai/text-to-speech', {
