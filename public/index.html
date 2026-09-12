@@ -7,12 +7,16 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F3F4F6; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Header */
 #header { background: #0B6C6C; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 .brand { display: flex; align-items: center; gap: 12px; }
 .logo { width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; }
 .brand-name { color: #fff; font-weight: 700; font-size: 15px; }
 .brand-sub { color: rgba(255,255,255,0.7); font-size: 11px; }
 .db-tag { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 14px; font-size: 12px; color: #fff; }
+
+/* Messages */
 #messages { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
 .row { display: flex; }
 .row.user { justify-content: flex-end; }
@@ -21,35 +25,37 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .bubble { max-width: 620px; border-radius: 18px; font-size: 14px; line-height: 1.5; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 .bubble.user { background: #0B6C6C; color: #fff; padding: 10px 16px; border-radius: 18px 18px 4px 18px; }
 .bubble.bot { background: #fff; color: #111; padding: 14px 16px; border-radius: 4px 18px 18px 18px; }
+
+/* Suggestions */
 #suggestions { padding: 0 24px 12px; display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
 .chip { background: #fff; color: #0B6C6C; border: 1px solid rgba(11,108,108,0.3); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
 .chip:hover { background: #0B6C6C; color: #fff; }
+
+/* Input bar */
 #input-bar { padding: 12px 24px 20px; background: #fff; border-top: 1px solid #E5E7EB; display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
 #inp { flex: 1; border: 1.5px solid #E5E7EB; border-radius: 24px; padding: 10px 18px; font-size: 14px; outline: none; font-family: inherit; }
 #inp:focus { border-color: #0B6C6C; }
 #sendbtn { width: 42px; height: 42px; border-radius: 50%; background: #0B6C6C; border: none; cursor: pointer; color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 #sendbtn:disabled { background: #D1D5DB; cursor: default; }
 #micbtn { width: 42px; height: 42px; border-radius: 50%; background: #fff; border: 2px solid #0B6C6C; cursor: pointer; color: #0B6C6C; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
-#micbtn.recording { background: #DC2626; border-color: #DC2626; color: #fff; animation: pulse 1s infinite; }
-#micbtn.processing { background: #D97706; border-color: #D97706; color: #fff; }
-@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+#micbtn:hover { background: #0B6C6C; color: #fff; }
+
+/* Typing dots */
 .dots { display: flex; gap: 5px; padding: 4px 0; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: #0B6C6C; animation: bop 1s infinite; }
 .dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
 @keyframes bop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+/* Cards */
 .stats-row { display: grid; gap: 10px; margin-bottom: 12px; }
 .stat { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 10px; padding: 12px 14px; }
 .stat.green { background: #F0FDF4; border-color: #BBF7D0; }
 .stat.red { background: #FEF2F2; border-color: #FECACA; }
 .stat.yellow { background: #FEFCE8; border-color: #FEF08A; }
 .slbl { font-size: 11px; color: #9CA3AF; margin-bottom: 3px; }
-.stat.green .slbl { color: #16A34A; }
-.stat.red .slbl { color: #DC2626; }
-.stat.yellow .slbl { color: #D97706; }
+.stat.green .slbl{color:#16A34A}.stat.red .slbl{color:#DC2626}.stat.yellow .slbl{color:#D97706}
 .sval { font-size: 20px; font-weight: 700; color: #111827; }
-.stat.green .sval { color: #16A34A; }
-.stat.red .sval { color: #DC2626; }
-.stat.yellow .sval { color: #D97706; }
+.stat.green .sval{color:#16A34A}.stat.red .sval{color:#DC2626}.stat.yellow .sval{color:#D97706}
 .tbl { border: 1px solid #E5E7EB; border-radius: 10px; overflow: hidden; margin: 10px 0; background: #fff; width: 100%; }
 .thd { background: #F9FAFB; border-bottom: 1px solid #E5E7EB; display: flex; }
 .thd span { padding: 8px 12px; font-size: 11px; font-weight: 600; color: #6B7280; flex: 1; }
@@ -65,12 +71,82 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .inv-body { padding: 14px 16px; }
 .inv-line { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #F3F4F6; font-size: 13px; }
 .inv-total { display: flex; justify-content: space-between; padding: 10px 0 0; font-size: 15px; font-weight: 700; border-top: 1px solid #E5E7EB; margin-top: 4px; }
-.voice-indicator { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6B7280; padding: 4px 0; }
-.voice-indicator.active { color: #DC2626; }
+
+/* ===== VOICE MODAL ===== */
+#voice-modal { display: none; position: fixed; inset: 0; z-index: 1000; align-items: center; justify-content: center; }
+#voice-modal.active { display: flex; }
+#voice-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); cursor: pointer; }
+#voice-card { position: relative; background: #fff; border-radius: 24px; padding: 48px 56px; display: flex; flex-direction: column; align-items: center; gap: 24px; box-shadow: 0 24px 64px rgba(0,0,0,0.2); min-width: 380px; z-index: 1; }
+
+/* Orb */
+#orb-wrap { position: relative; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; }
+.ring { position: absolute; border-radius: 50%; border: 2px solid #0B6C6C; opacity: 0; }
+.ring1 { width: 140px; height: 140px; }
+.ring2 { width: 110px; height: 110px; }
+.ring3 { width: 80px; height: 80px; }
+#orb-core { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #0B6C6C, #14A0A0); display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 0 24px rgba(11,108,108,0.4); z-index: 2; }
+
+/* Listening state */
+#voice-modal.listening .ring { animation: ripple 2s ease-out infinite; }
+#voice-modal.listening .ring2 { animation-delay: 0.5s; }
+#voice-modal.listening .ring3 { animation-delay: 1s; }
+#voice-modal.listening #orb-core { animation: orbpulse 1.5s ease-in-out infinite; }
+@keyframes ripple { 0%{transform:scale(0.8);opacity:0.6} 100%{transform:scale(1.4);opacity:0} }
+@keyframes orbpulse { 0%,100%{box-shadow:0 0 24px rgba(11,108,108,0.4)} 50%{box-shadow:0 0 40px rgba(11,108,108,0.8)} }
+
+/* Waveform bars */
+#waveform { display: flex; gap: 4px; align-items: center; height: 36px; }
+.bar { width: 4px; border-radius: 2px; background: #0B6C6C; opacity: 0.3; transition: height 0.1s; }
+#voice-modal.listening .bar { opacity: 1; animation: wave 1s ease-in-out infinite; }
+.bar:nth-child(1){animation-delay:0s}.bar:nth-child(2){animation-delay:.1s}.bar:nth-child(3){animation-delay:.2s}
+.bar:nth-child(4){animation-delay:.3s}.bar:nth-child(5){animation-delay:.4s}.bar:nth-child(6){animation-delay:.3s}
+.bar:nth-child(7){animation-delay:.2s}.bar:nth-child(8){animation-delay:.1s}.bar:nth-child(9){animation-delay:0s}
+@keyframes wave {
+  0%,100% { height: 6px; }
+  50% { height: 28px; }
+}
+
+/* Status text */
+#voice-status { font-size: 20px; font-weight: 600; color: #111827; }
+#voice-sub { font-size: 14px; color: #9CA3AF; }
+#voice-type-link { font-size: 13px; color: #0B6C6C; cursor: pointer; text-decoration: underline; margin-top: 4px; }
+#voice-cancel { background: none; border: 1px solid #E5E7EB; border-radius: 20px; padding: 6px 20px; font-size: 13px; color: #6B7280; cursor: pointer; font-family: inherit; }
+#voice-cancel:hover { border-color: #DC2626; color: #DC2626; }
+
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#D1D5DB;border-radius:3px}
 </style>
 </head>
 <body>
+
+<!-- Voice Modal -->
+<div id="voice-modal">
+  <div id="voice-backdrop"></div>
+  <div id="voice-card">
+    <div id="orb-wrap">
+      <div class="ring ring1"></div>
+      <div class="ring ring2"></div>
+      <div class="ring ring3"></div>
+      <div id="orb-core">&#127908;</div>
+    </div>
+    <div id="waveform">
+      <div class="bar" style="height:8px"></div>
+      <div class="bar" style="height:14px"></div>
+      <div class="bar" style="height:20px"></div>
+      <div class="bar" style="height:28px"></div>
+      <div class="bar" style="height:22px"></div>
+      <div class="bar" style="height:28px"></div>
+      <div class="bar" style="height:20px"></div>
+      <div class="bar" style="height:14px"></div>
+      <div class="bar" style="height:8px"></div>
+    </div>
+    <div id="voice-status">Listening...</div>
+    <div id="voice-sub">Speak in Hindi or English</div>
+    <button id="voice-cancel">Cancel</button>
+    <div id="voice-type-link">Type instead</div>
+  </div>
+</div>
+
+<!-- Header -->
 <div id="header">
   <div class="brand">
     <div class="logo">&#128138;</div>
@@ -81,19 +157,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   </div>
   <div class="db-tag">ME2627 &middot; FY 2026-27</div>
 </div>
+
 <div id="messages"></div>
 <div id="suggestions"></div>
+
 <div id="input-bar">
-  <button id="micbtn" title="Hold to speak">&#127908;</button>
-  <input id="inp" type="text" placeholder="Ask anything or hold mic to speak..." />
+  <button id="micbtn" title="Click to speak">&#127908;</button>
+  <input id="inp" type="text" placeholder="Ask anything or click mic to speak..." />
   <button id="sendbtn">&#10148;</button>
 </div>
+
 <script>
 var chatHistory = [];
 var busy = false;
 var mediaRecorder = null;
 var audioChunks = [];
-var isRecording = false;
+var silenceTimer = null;
+var voiceModal = document.getElementById('voice-modal');
 
 function fmt(n) {
   n = Number(n)||0;
@@ -129,24 +209,24 @@ function showTyping() {
 
 function hideTyping() { var el=document.getElementById('typing'); if(el) el.remove(); }
 
-function playAudio(base64Audio) {
+// ---- TTS / Audio ----
+function playAudio(base64) {
   try {
-    var audio = new Audio('data:audio/wav;base64,' + base64Audio);
-    audio.play().catch(function(e){ console.log('Audio play failed:', e); });
-  } catch(e) { console.log('Audio error:', e); }
+    var audio = new Audio('data:audio/wav;base64,'+base64);
+    audio.play().catch(function(){});
+  } catch(e){}
 }
 
 function speakMessage(text) {
   if(!text) return;
   fetch('/api/tts', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
     body: JSON.stringify({text: text})
-  }).then(function(r){ return r.json(); }).then(function(data){
-    if(data.audio) playAudio(data.audio);
-  }).catch(function(e){ console.log('TTS error:', e); });
+  }).then(function(r){ return r.json(); }).then(function(d){ if(d.audio) playAudio(d.audio); }).catch(function(){});
 }
 
+// ---- Render ----
 function render(p) {
   var html = '';
   if(p.message) html += '<div class="msg">'+p.message+'</div>';
@@ -156,15 +236,13 @@ function render(p) {
     html += '<div class="inv-box"><div class="inv-head"><div><div style="font-size:16px;font-weight:700">Invoice #'+inv.no+'</div><div style="font-size:12px;opacity:0.8">'+inv.party+' &middot; '+inv.area+'</div></div><span style="background:rgba(255,255,255,0.2);color:#fff;padding:2px 10px;border-radius:20px;font-size:12px">\u2713 Confirmed</span></div><div class="inv-body">'+lines+'<div class="inv-line" style="border:none;color:#6B7280"><span>Subtotal</span><span>'+fmt(inv.subtotal)+'</span></div><div class="inv-line" style="border:none;color:#6B7280"><span>GST</span><span>'+fmt(inv.gst)+'</span></div><div class="inv-total"><span>Net Total</span><span style="color:#0B6C6C">'+fmt(inv.total)+'</span></div></div></div>';
   }
   if(p.stats && p.stats.length > 0) {
-    var cols = Math.min(p.stats.length, 4);
+    var cols = Math.min(p.stats.length,4);
     html += '<div class="stats-row" style="grid-template-columns:repeat('+cols+',1fr)">';
     p.stats.forEach(function(s){ html += '<div class="stat '+(s.color||'')+'"><div class="slbl">'+s.label+'</div><div class="sval">'+s.value+'</div></div>'; });
     html += '</div>';
   }
   if(p.table && p.table.columns && p.table.rows && p.table.rows.length > 0) {
-    var hdrs = p.table.columns.map(function(c){ return '<span>'+c+'</span>'; }).join('');
-    var rows = p.table.rows.map(function(r){ return '<div class="trow">'+r.map(function(c){ return '<span>'+c+'</span>'; }).join('')+'</div>'; }).join('');
-    html += '<div class="tbl"><div class="thd">'+hdrs+'</div>'+rows+'</div>';
+    html += '<div class="tbl"><div class="thd">'+p.table.columns.map(function(c){ return '<span>'+c+'</span>'; }).join('')+'</div>'+p.table.rows.map(function(r){ return '<div class="trow">'+r.map(function(c){ return '<span>'+c+'</span>'; }).join('')+'</div>'; }).join('')+'</div>';
   }
   if(p.actions && p.actions.length > 0) {
     html += '<div class="acts">'+p.actions.map(function(a,i){ return '<button class="'+(i===0?'bp':'bo')+'">'+a+'</button>'; }).join('')+'</div>';
@@ -172,111 +250,179 @@ function render(p) {
   return html || '<div style="font-size:14px;color:#374151">Done!</div>';
 }
 
-function send(txt) {
-  if(busy) return;
-  var text = txt || document.getElementById('inp').value.trim();
-  if(!text) return;
-  document.getElementById('inp').value = '';
+// ---- Send to Claude ----
+function send(text) {
+  if(busy || !text || !text.trim()) return;
   busy = true;
   document.getElementById('sendbtn').disabled = true;
+  document.getElementById('inp').value = '';
   addUser(text);
   chatHistory.push({role:'user', content:text});
   showTyping();
 
   fetch('/api/chat', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
     body: JSON.stringify({messages: chatHistory})
   }).then(function(r){ return r.json(); }).then(function(result) {
-    if(result.error) {
-      hideTyping();
-      addBot('<div style="color:#DC2626">Error: '+(result.error.message||JSON.stringify(result.error))+'</div>');
-      busy=false; document.getElementById('sendbtn').disabled=false;
-      return;
-    }
+    if(result.error) { hideTyping(); addBot('<div style="color:#DC2626">Error: '+(result.error.message||'Unknown error')+'</div>'); busy=false; document.getElementById('sendbtn').disabled=false; return; }
     var raw = (result.content&&result.content[0]&&result.content[0].text)||'{}';
     chatHistory.push({role:'assistant', content:raw});
     var parsed;
-    try { parsed = JSON.parse(raw); } catch(e) { parsed = {message: raw}; }
+    try { parsed = JSON.parse(raw); } catch(e) { parsed = {message:raw}; }
     hideTyping();
     addBot(render(parsed));
-    // Speak the message aloud
     if(parsed.message) speakMessage(parsed.message);
     busy=false; document.getElementById('sendbtn').disabled=false;
   }).catch(function(e) {
-    hideTyping();
-    addBot('<div style="color:#DC2626">Error: '+e.message+'</div>');
+    hideTyping(); addBot('<div style="color:#DC2626">Error: '+e.message+'</div>');
     busy=false; document.getElementById('sendbtn').disabled=false;
   });
 }
 
-// Voice recording
-var micBtn = document.getElementById('micbtn');
+// ---- Voice Modal ----
+function setVoiceState(state) {
+  voiceModal.className = state ? 'active '+state : 'active';
+  var status = document.getElementById('voice-status');
+  var sub = document.getElementById('voice-sub');
+  if(state === 'listening') { status.textContent = 'Listening...'; sub.textContent = 'Speak in Hindi or English'; }
+  if(state === 'processing') { status.textContent = 'Processing...'; sub.textContent = 'Please wait'; }
+}
 
-function startRecording() {
-  if(busy || isRecording) return;
-  navigator.mediaDevices.getUserMedia({audio: true}).then(function(stream) {
-    isRecording = true;
-    audioChunks = [];
-    micBtn.className = 'recording';
-    micBtn.innerHTML = '&#9210;'; // stop icon
-    mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm'});
+function openVoiceModal() {
+  if(busy) return;
+  voiceModal.classList.add('active');
+  // Play greeting first, then start recording
+  fetch('/api/tts', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({text: 'How can I help you today?'})
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    if(d.audio) {
+      var audio = new Audio('data:audio/wav;base64,'+d.audio);
+      audio.play().then(function() {
+        audio.onended = function() { startVoiceRecording(); };
+      }).catch(function() { startVoiceRecording(); });
+    } else {
+      startVoiceRecording();
+    }
+  }).catch(function() { startVoiceRecording(); });
+}
+
+function closeVoiceModal() {
+  voiceModal.className = '';
+  if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+  if(silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+}
+
+function startVoiceRecording() {
+  setVoiceState('listening');
+  audioChunks = [];
+
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream) {
+    mediaRecorder = new MediaRecorder(stream, {mimeType:'audio/webm'});
+    
+    // Silence detection using AudioContext
+    var audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    var source = audioCtx.createMediaStreamSource(stream);
+    var analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    var dataArray = new Uint8Array(analyser.frequencyBinCount);
+    var silenceStart = null;
+    var hasSpeech = false;
+    var SILENCE_THRESHOLD = 10;
+    var SILENCE_DURATION = 1800; // 1.8s of silence after speech
+
+    // Update waveform bars with real audio levels
+    var bars = document.querySelectorAll('.bar');
+    function updateBars() {
+      if(!voiceModal.classList.contains('active')) return;
+      analyser.getByteFrequencyData(dataArray);
+      var step = Math.floor(dataArray.length / bars.length);
+      bars.forEach(function(bar, i) {
+        var val = dataArray[i * step] || 0;
+        var h = Math.max(4, Math.min(32, (val / 255) * 32));
+        bar.style.height = h + 'px';
+      });
+      requestAnimationFrame(updateBars);
+    }
+    updateBars();
+
+    function checkSilence() {
+      if(!voiceModal.classList.contains('active')) return;
+      analyser.getByteFrequencyData(dataArray);
+      var sum = 0;
+      for(var i=0; i<dataArray.length; i++) sum += dataArray[i];
+      var avg = sum / dataArray.length;
+      
+      if(avg > SILENCE_THRESHOLD) {
+        hasSpeech = true;
+        silenceStart = null;
+      } else if(hasSpeech) {
+        if(!silenceStart) silenceStart = Date.now();
+        if(Date.now() - silenceStart > SILENCE_DURATION) {
+          // Silence detected — stop recording
+          if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            stream.getTracks().forEach(function(t){ t.stop(); });
+            audioCtx.close();
+            return;
+          }
+        }
+      }
+      setTimeout(checkSilence, 100);
+    }
+    checkSilence();
+
     mediaRecorder.ondataavailable = function(e) { if(e.data.size > 0) audioChunks.push(e.data); };
     mediaRecorder.onstop = function() {
-      stream.getTracks().forEach(function(t){ t.stop(); });
-      micBtn.className = 'processing';
-      micBtn.innerHTML = '&#8987;'; // hourglass
+      if(!voiceModal.classList.contains('active')) return; // cancelled
+      setVoiceState('processing');
       var blob = new Blob(audioChunks, {type:'audio/webm'});
       var reader = new FileReader();
       reader.onloadend = function() {
         var base64 = reader.result.split(',')[1];
         fetch('/api/stt', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({audio: base64, language: 'hi-IN'})
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({audio:base64, language:'hi-IN'})
         }).then(function(r){ return r.json(); }).then(function(data) {
-          micBtn.className = '';
-          micBtn.innerHTML = '&#127908;';
-          isRecording = false;
+          closeVoiceModal();
           if(data.transcript && data.transcript.trim()) {
             document.getElementById('inp').value = data.transcript;
             send(data.transcript);
           } else {
             addBot('<div style="color:#9CA3AF;font-size:13px">Could not hear clearly. Please try again.</div>');
           }
-        }).catch(function(e) {
-          micBtn.className = ''; micBtn.innerHTML = '&#127908;'; isRecording = false;
-          console.error('STT error:', e);
+        }).catch(function() {
+          closeVoiceModal();
+          addBot('<div style="color:#DC2626;font-size:13px">Voice error. Please try again.</div>');
         });
       };
       reader.readAsDataURL(blob);
     };
     mediaRecorder.start();
-  }).catch(function(e) {
-    alert('Microphone access denied. Please allow microphone access.');
-    isRecording = false;
+  }).catch(function() {
+    closeVoiceModal();
+    alert('Microphone access denied. Please allow microphone access in your browser.');
   });
 }
 
-function stopRecording() {
-  if(mediaRecorder && isRecording && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-  }
-}
+// Event listeners
+document.getElementById('micbtn').onclick = openVoiceModal;
+document.getElementById('voice-backdrop').onclick = closeVoiceModal;
+document.getElementById('voice-cancel').onclick = closeVoiceModal;
+document.getElementById('voice-type-link').onclick = function() { closeVoiceModal(); document.getElementById('inp').focus(); };
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeVoiceModal(); });
+document.getElementById('sendbtn').onclick = function(){ send(document.getElementById('inp').value.trim()); };
+document.getElementById('inp').onkeydown = function(e){ if(e.key==='Enter') send(document.getElementById('inp').value.trim()); };
 
-// Hold to record
-micBtn.addEventListener('mousedown', startRecording);
-micBtn.addEventListener('mouseup', stopRecording);
-micBtn.addEventListener('mouseleave', stopRecording);
-// Touch support for mobile
-micBtn.addEventListener('touchstart', function(e){ e.preventDefault(); startRecording(); });
-micBtn.addEventListener('touchend', function(e){ e.preventDefault(); stopRecording(); });
-
-document.getElementById('sendbtn').onclick = function(){ send(); };
-document.getElementById('inp').onkeydown = function(e){ if(e.key==='Enter') send(); };
-
+// Init
 window.onload = function() {
-  addBot('<div style="font-size:14px;line-height:1.7;color:#374151">Good morning! \uD83D\uDC4B I\'m your AI assistant for <b>TradeEzee</b>.<br>Type your question or <b>hold the mic button</b> to speak in Hindi or English.</div>');
+  addBot('<div style="font-size:14px;line-height:1.7;color:#374151">Good morning! \uD83D\uDC4B I\'m your AI assistant for <b>TradeEzee</b>.<br>Type your question or click the <b>mic button</b> to speak in Hindi or English.</div>');
   var sugs = ["Show me today's sales summary","Which parties have outstanding payments?","Top selling products this month","Create invoice for Hira Pharma Distributors","Products expiring in next 60 days","Show purchases from stockists"];
   var el = document.getElementById('suggestions');
   sugs.forEach(function(s){
