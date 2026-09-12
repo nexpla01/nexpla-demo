@@ -220,11 +220,29 @@ function playAudio(base64) {
 
 function speakMessage(text) {
   if(!text) return;
+  // Try Sarvam TTS first, fallback to browser speech synthesis
   fetch('/api/tts', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({text: text})
-  }).then(function(r){ return r.json(); }).then(function(d){ if(d.audio) playAudio(d.audio); }).catch(function(){});
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if(d.audio) {
+      playAudio(d.audio);
+    } else {
+      // Fallback: browser built-in TTS
+      browserSpeak(text);
+    }
+  }).catch(function(){ browserSpeak(text); });
+}
+
+function browserSpeak(text) {
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  var utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'en-IN';
+  utt.rate = 1.0;
+  utt.pitch = 1.0;
+  window.speechSynthesis.speak(utt);
 }
 
 // ---- Render ----
@@ -309,11 +327,12 @@ function openVoiceModal() {
       }
       audio.onended = beginRecording;
       audio.onerror = beginRecording;
-      // Fallback: start recording after 3s regardless
       setTimeout(beginRecording, 3000);
       audio.play().catch(beginRecording);
     } else {
-      startVoiceRecording();
+      // Fallback: browser TTS for greeting
+      browserSpeak('How can I help you today?');
+      setTimeout(startVoiceRecording, 2000);
     }
   }).catch(function() { startVoiceRecording(); });
 }
