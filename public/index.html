@@ -81,7 +81,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <script>
 var SYSTEM = "You are an AI assistant inside TradeEzee, a pharma distributor ERP in India. Database: ME2627, FY 2026-27.\n\nReal parties: MANGAL MEDICAL AGENCIES (Dombivli, ph:486955), RAJA MEDICAL STORES (Ulhasnagar, ph:704595), HIRA PHARMA DISTRIBUTORS (Kalyan, ph:300617), HARRIS AGENCY (Dombivli E, ph:433761), METRO MEDICAL AGENCIES (Ulhasnagar, ph:522955), PASBAAN MEDICAL & GENERAL STORES (Kalyan W, ph:208696), SHRI SATYANARAIN PHARMA DIST (Ulhasnagar, ph:551953), RAMDAS PHARMA DISTRIBUTORS PVT. LTD (Shahad, ph:301615), K.DASS PHARMA DISTRIBUTORS PVT. LTD (Shahad, ph:300105), SHAH R KANTILAL & CO. (Kalyan W, ph:315084)\n\nReal products: ANOVATE OINT 20 GM, NASCORE PLUS TAB, ZORPEX 150MG TAB, ZORPEX 75MG TAB, DILOSYN EXPECTORANT 100 ML, DERMONORM 250MG TAB, DILOSYN TAB, ANGINEX 20MG TAB, KAPILIN INJ, MACRABERIN FORTE INJ\n\nRespond with ONLY a JSON object. Always include 'message' (1-2 sentences), 'type', and 'data'.\n\nFor sales questions: type='sales_summary', data={total_bills,total_amount,collected,pending,items:[{party,area,bills,amount}]}\nFor outstanding/overdue: type='outstanding_table', data={total_outstanding,count,items:[{party,area,amount,days_overdue,phone}]}\nFor products/stock: type='product_table', data={items:[{product,company,qty_sold,amount,stock}]}\nFor invoice creation: type='invoice_confirm', data={invoice_no,party,area,items:[{product,qty,rate,amount}],total,gst,net_total}\nFor purchases: type='purchase_summary', data={total_purchases,total_amount,items:[{company,bills,amount,paid,pending}]}\nFor other: type='text'\n\nUse only real party and product names above. Amounts in Indian Rupees.";
 
-var history = [];
+var chatHistory = [];
 var busy = false;
 
 function fmt(n) {
@@ -152,14 +152,15 @@ function send(txt) {
   busy = true;
   document.getElementById('sendbtn').disabled = true;
   addUser(text);
-  history.push({role:'user', content:text});
+  chatHistory.push({role:'user', content:text});
   showTyping();
 
   fetch('/api/chat', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({system: SYSTEM, messages: history})
+    body: JSON.stringify({system: SYSTEM, messages: chatHistory})
   }).then(function(r){ return r.json(); }).then(function(result) {
+    console.log('API result:', result);
     if(result.error) {
       hideTyping();
       addBot('<div style="color:#DC2626">Error: '+(result.error.message||JSON.stringify(result.error))+'</div>');
@@ -167,13 +168,14 @@ function send(txt) {
       return;
     }
     var raw = (result.content&&result.content[0]&&result.content[0].text)||'{}';
-    history.push({role:'assistant', content:raw});
+    chatHistory.push({role:'assistant', content:raw});
     var parsed;
     try { parsed = JSON.parse(raw); } catch(e) { parsed = {type:'text', message:raw}; }
     hideTyping();
     addBot(render(parsed));
     busy=false; document.getElementById('sendbtn').disabled=false;
   }).catch(function(e) {
+    console.error('Fetch error:', e);
     hideTyping();
     addBot('<div style="color:#DC2626">Error: '+e.message+'</div>');
     busy=false; document.getElementById('sendbtn').disabled=false;
