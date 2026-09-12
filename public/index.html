@@ -218,33 +218,21 @@ function playAudio(base64) {
   } catch(e){}
 }
 
-var SARVAM_KEY = 'sk_jqlbzqae_Tt8Qgp6EoZklEW1vK1Ot10zt';
-
 function speakMessage(text) {
   if(!text) return;
-  fetch('https://api.sarvam.ai/text-to-speech', {
+  fetch('/api/tts', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'api-subscription-key': SARVAM_KEY
-    },
-    body: JSON.stringify({
-      text: text.slice(0, 500),
-      model: 'bulbul:v2',
-      speaker: 'anushka',
-      target_language_code: 'en-IN',
-      enable_preprocessing: true,
-      speech_sample_rate: 22050
-    })
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({text: text})
   }).then(function(r){ return r.json(); }).then(function(d){
-    console.log('TTS response:', JSON.stringify(d).slice(0,100));
-    if(d.audios && d.audios[0]) {
-      playAudio(d.audios[0]);
+    console.log('TTS result:', d.audio ? 'got audio' : 'no audio', d.debug||d.error||'');
+    if(d.audio) {
+      playAudio(d.audio);
     } else {
       browserSpeak(text);
     }
   }).catch(function(e){ 
-    console.log('TTS error:', e);
+    console.log('TTS fetch error:', e);
     browserSpeak(text); 
   });
 }
@@ -325,13 +313,13 @@ function openVoiceModal() {
   if(busy) return;
   voiceModal.classList.add('active');
   // Play greeting first, then start recording
-  fetch('https://api.sarvam.ai/text-to-speech', {
+  fetch('/api/tts', {
     method:'POST',
-    headers:{'Content-Type':'application/json','api-subscription-key':SARVAM_KEY},
-    body: JSON.stringify({text:'How can I help you today?',model:'bulbul:v2',speaker:'anushka',target_language_code:'en-IN',enable_preprocessing:true,speech_sample_rate:22050})
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({text:'How can I help you today?'})
   }).then(function(r){ return r.json(); }).then(function(d) {
-    if(d.audios && d.audios[0]) {
-      var audio = new Audio('data:audio/wav;base64,'+d.audios[0]);
+    if(d.audio) {
+      var audio = new Audio('data:audio/wav;base64,'+d.audio);
       var started = false;
       function beginRecording() {
         if(started) return;
