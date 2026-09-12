@@ -141,6 +141,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>
     <div id="voice-status">Listening...</div>
     <div id="voice-sub">Speak in Hindi or English</div>
+    <button id="voice-stop" style="background:#0B6C6C;color:#fff;border:none;border-radius:20px;padding:8px 28px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:500;">Stop &amp; Send</button>
     <button id="voice-cancel">Cancel</button>
     <div id="voice-type-link">Type instead</div>
   </div>
@@ -325,102 +326,112 @@ function closeVoiceModal() {
   if(silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
 }
 
+function stopAndProcess() {
+  if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+}
+
 function startVoiceRecording() {
   setVoiceState('listening');
   audioChunks = [];
 
+  // Try different mimeTypes for browser compatibility
+  var mimeType = 'audio/webm';
+  if(!MediaRecorder.isTypeSupported('audio/webm')) {
+    if(MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
+    else mimeType = '';
+  }
+
   navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream) {
-    mediaRecorder = new MediaRecorder(stream, {mimeType:'audio/webm'});
-    
-    // Silence detection using AudioContext
-    var audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    var source = audioCtx.createMediaStreamSource(stream);
-    var analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 256;
-    source.connect(analyser);
-    var dataArray = new Uint8Array(analyser.frequencyBinCount);
-    var silenceStart = null;
-    var hasSpeech = false;
-    var SILENCE_THRESHOLD = 10;
-    var SILENCE_DURATION = 1800; // 1.8s of silence after speech
+    var options = mimeType ? {mimeType: mimeType} : {};
+    mediaRecorder = new MediaRecorder(stream, options);
 
-    // Update waveform bars with real audio levels
-    var bars = document.querySelectorAll('.bar');
-    function updateBars() {
-      if(!voiceModal.classList.contains('active')) return;
-      analyser.getByteFrequencyData(dataArray);
-      var step = Math.floor(dataArray.length / bars.length);
-      bars.forEach(function(bar, i) {
-        var val = dataArray[i * step] || 0;
-        var h = Math.max(4, Math.min(32, (val / 255) * 32));
-        bar.style.height = h + 'px';
-      });
-      requestAnimationFrame(updateBars);
-    }
-    updateBars();
+    // Real audio waveform via AudioContext
+    try {
+      var audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      var source = audioCtx.createMediaStreamSource(stream);
+      var analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      var dataArray = new Uint8Array(analyser.frequencyBinCount);
+      var bars = document.querySelectorAll('.bar');
+      var silenceStart = null;
+      var hasSpeech = false;
 
-    function checkSilence() {
-      if(!voiceModal.classList.contains('active')) return;
-      analyser.getByteFrequencyData(dataArray);
-      var sum = 0;
-      for(var i=0; i<dataArray.length; i++) sum += dataArray[i];
-      var avg = sum / dataArray.length;
-      
-      if(avg > SILENCE_THRESHOLD) {
-        hasSpeech = true;
-        silenceStart = null;
-      } else if(hasSpeech) {
-        if(!silenceStart) silenceStart = Date.now();
-        if(Date.now() - silenceStart > SILENCE_DURATION) {
-          // Silence detected — stop recording
-          if(mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-            stream.getTracks().forEach(function(t){ t.stop(); });
-            audioCtx.close();
-            return;
-          }
+      function tick() {
+        if(!voiceModal.classList.contains('active')) return;
+        analyser.getByteFrequencyData(dataArray);
+        // Update bars
+        var step = Math.floor(dataArray.length / bars.length);
+        bars.forEach(function(bar, i) {
+          var val = dataArray[i * step] || 0;
+          bar.style.height = Math.max(4, Math.min(32, (val/255)*32)) + 'px';
+        });
+        // Silence detection
+        var sum = 0;
+        for(var i=0; i<dataArray.length; i++) sum += dataArray[i];
+        var avg = sum / dataArray.length;
+        if(avg > 8) { hasSpeech = true; silenceStart = null; }
+        else if(hasSpeech) {
+          if(!silenceStart) silenceStart = Date.now();
+          if(Date.now() - silenceStart > 2000) { stopAndProcess(); return; }
         }
+        setTimeout(tick, 100);
       }
-      setTimeout(checkSilence, 100);
-    }
-    checkSilence();
+      tick();
+    } catch(e) { console.log('AudioContext error:', e); }
 
-    mediaRecorder.ondataavailable = function(e) { if(e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.ondataavailable = function(e) { if(e.data && e.data.size > 0) audioChunks.push(e.data); };
+    
     mediaRecorder.onstop = function() {
-      if(!voiceModal.classList.contains('active')) return; // cancelled
+      stream.getTracks().forEach(function(t){ t.stop(); });
+      if(!voiceModal.classList.contains('active')) return;
       setVoiceState('processing');
-      var blob = new Blob(audioChunks, {type:'audio/webm'});
+      document.getElementById('voice-status').textContent = 'Transcribing...';
+      
+      var blob = new Blob(audioChunks, {type: mimeType || 'audio/webm'});
+      console.log('Audio blob size:', blob.size, 'type:', blob.type);
+      
       var reader = new FileReader();
       reader.onloadend = function() {
         var base64 = reader.result.split(',')[1];
         fetch('/api/stt', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({audio:base64, language:'hi-IN'})
+          body: JSON.stringify({audio: base64, language:'hi-IN', mimeType: mimeType||'audio/webm'})
         }).then(function(r){ return r.json(); }).then(function(data) {
+          console.log('STT response:', data);
           closeVoiceModal();
           if(data.transcript && data.transcript.trim()) {
-            document.getElementById('inp').value = data.transcript;
-            send(data.transcript);
+            send(data.transcript.trim());
+          } else if(data.error) {
+            addBot('<div style="color:#DC2626;font-size:13px">STT Error: '+data.error+'</div>');
           } else {
             addBot('<div style="color:#9CA3AF;font-size:13px">Could not hear clearly. Please try again.</div>');
           }
-        }).catch(function() {
+        }).catch(function(e) {
+          console.error('STT fetch error:', e);
           closeVoiceModal();
-          addBot('<div style="color:#DC2626;font-size:13px">Voice error. Please try again.</div>');
+          addBot('<div style="color:#DC2626;font-size:13px">Voice error: '+e.message+'</div>');
         });
       };
       reader.readAsDataURL(blob);
     };
-    mediaRecorder.start();
-  }).catch(function() {
+
+    mediaRecorder.start(250); // collect chunks every 250ms
+    console.log('Recording started, mimeType:', mediaRecorder.mimeType);
+
+  }).catch(function(e) {
     closeVoiceModal();
-    alert('Microphone access denied. Please allow microphone access in your browser.');
+    console.error('Mic error:', e);
+    alert('Microphone access denied or unavailable: '+e.message);
   });
 }
 
 // Event listeners
 document.getElementById('micbtn').onclick = openVoiceModal;
+document.getElementById('voice-stop').onclick = stopAndProcess;
 document.getElementById('voice-backdrop').onclick = closeVoiceModal;
 document.getElementById('voice-cancel').onclick = closeVoiceModal;
 document.getElementById('voice-type-link').onclick = function() { closeVoiceModal(); document.getElementById('inp').focus(); };
