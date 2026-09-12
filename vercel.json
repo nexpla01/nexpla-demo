@@ -1,9 +1,16 @@
 {
-  "regions": ["bom1"],
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": [
+    "bom1"
+  ],
   "rewrites": [
-    { "source": "/api/chat", "destination": "/api/chat" },
-    { "source": "/api/tts", "destination": "/api/tts" },
-    { "source": "/api/stt", "destination": "/api/stt" },
-    { "source": "/(.*)", "destination": "/public/index.html" }
+    {
+      "source": "/api/chat",
+      "destination": "/api/chat"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/public/index.html"
+    }
   ]
 }

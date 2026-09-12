@@ -211,39 +211,73 @@ function showTyping() {
 function hideTyping() { var el=document.getElementById('typing'); if(el) el.remove(); }
 
 // ---- TTS / Audio ----
-function playAudio(base64) {
+var audioCtx = null;
+
+function unlockAudio() {
   try {
-    var audio = new Audio('data:audio/wav;base64,'+base64);
-    audio.play().catch(function(){});
-  } catch(e){}
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') return audioCtx.resume();
+    return Promise.resolve();
+  } catch(e) {
+    console.warn('AudioContext unavailable:', e);
+    return Promise.resolve();
+  }
+}
+
+function base64ToArrayBuffer(base64) {
+  var binary = atob(base64);
+  var bytes = new Uint8Array(binary.length);
+  for(var i=0; i<binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+function playAudio(base64) {
+  if(!base64) return Promise.reject(new Error('Sarvam returned no audio'));
+
+  return unlockAudio().then(function() {
+    if(!audioCtx) throw new Error('AudioContext unavailable');
+
+    return new Promise(function(resolve, reject) {
+      audioCtx.decodeAudioData(base64ToArrayBuffer(base64), function(buffer) {
+        var source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        source.onended = resolve;
+        source.start(0);
+      }, reject);
+    });
+  }).catch(function(err) {
+    console.error('Sarvam audio playback error:', err);
+    throw err;
+  });
+}
+
+function formatVoiceError(data, status) {
+  var e = data && data.error;
+  if(typeof e === 'object' && e) return e.message || JSON.stringify(e);
+  return e || ('HTTP '+status);
 }
 
 function speakMessage(text) {
   if(!text) return;
-  fetch('/api/tts', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({text: text})
-  }).then(function(r){ return r.json(); }).then(function(d){
-    console.log('TTS result:', d.audio ? 'got audio' : 'no audio', d.debug||d.error||'');
-    if(d.audio) {
-      playAudio(d.audio);
-    } else {
-      browserSpeak(text);
-    }
-  }).catch(function(e){ 
-    console.log('TTS fetch error:', e);
-    browserSpeak(text); 
-  });
-}
 
-function browserSpeak(text) {
-  if(!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  var utt = new SpeechSynthesisUtterance(text);
-  utt.lang = 'en-IN';
-  utt.rate = 1.0;
-  window.speechSynthesis.speak(utt);
+  fetch('/api/tts', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({text: text})
+  }).then(function(r) {
+    return r.json().then(function(d) {
+      if(!r.ok) throw new Error(formatVoiceError(d, r.status));
+      return d;
+    });
+  }).then(function(d) {
+    if(!d.audio) throw new Error('No audio returned by /api/tts');
+    return playAudio(d.audio);
+  }).catch(function(err) {
+    console.error('Sarvam TTS failed:', err);
+    // Deliberately do NOT fall back to browser speechSynthesis.
+    // That was masking whether Sarvam was actually working.
+  });
 }
 
 // ---- Render ----
@@ -312,30 +346,39 @@ function setVoiceState(state) {
 function openVoiceModal() {
   if(busy) return;
   voiceModal.classList.add('active');
-  // Play greeting first, then start recording
+
+  // Unlock browser audio synchronously from the user's mic click.
+  // This prevents autoplay policy from blocking Sarvam audio later.
+  unlockAudio();
+
+  // Play Sarvam greeting first, then start recording.
+  var started = false;
+  function beginRecording() {
+    if(started) return;
+    started = true;
+    startVoiceRecording();
+  }
+
   fetch('/api/tts', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({text:'How can I help you today?'})
-  }).then(function(r){ return r.json(); }).then(function(d) {
-    if(d.audio) {
-      var audio = new Audio('data:audio/wav;base64,'+d.audio);
-      var started = false;
-      function beginRecording() {
-        if(started) return;
-        started = true;
-        startVoiceRecording();
-      }
-      audio.onended = beginRecording;
-      audio.onerror = beginRecording;
-      setTimeout(beginRecording, 3000);
-      audio.play().catch(beginRecording);
-    } else {
-      // Fallback: browser TTS for greeting
-      browserSpeak('How can I help you today?');
-      setTimeout(startVoiceRecording, 2000);
-    }
-  }).catch(function() { startVoiceRecording(); });
+    body: JSON.stringify({text: 'How can I help you today?'})
+  }).then(function(r) {
+    return r.json().then(function(d) {
+      if(!r.ok) throw new Error(formatVoiceError(d, r.status));
+      return d;
+    });
+  }).then(function(d) {
+    if(!d.audio) throw new Error('No greeting audio returned by /api/tts');
+    return playAudio(d.audio);
+  }).then(beginRecording)
+    .catch(function(err) {
+      console.error('Sarvam greeting failed:', err);
+      beginRecording();
+    });
+
+  // Never leave the demo stuck waiting for audio.
+  setTimeout(beginRecording, 5000);
 }
 
 function closeVoiceModal() {
@@ -420,13 +463,16 @@ function startVoiceRecording() {
           method:'POST',
           headers:{'Content-Type':'application/json'},
           body: JSON.stringify({audio: base64, language:'hi-IN', mimeType: mimeType||'audio/webm'})
-        }).then(function(r){ return r.json(); }).then(function(data) {
+        }).then(function(r) {
+          return r.json().then(function(data) {
+            if(!r.ok) throw new Error(formatVoiceError(data, r.status));
+            return data;
+          });
+        }).then(function(data) {
           console.log('STT response:', data);
           closeVoiceModal();
           if(data.transcript && data.transcript.trim()) {
             send(data.transcript.trim());
-          } else if(data.error) {
-            addBot('<div style="color:#DC2626;font-size:13px">STT Error: '+data.error+'</div>');
           } else {
             addBot('<div style="color:#9CA3AF;font-size:13px">Could not hear clearly. Please try again.</div>');
           }
@@ -450,7 +496,7 @@ function startVoiceRecording() {
 }
 
 // Event listeners
-document.getElementById('micbtn').onclick = openVoiceModal;
+document.getElementById('micbtn').onclick = function(){ unlockAudio(); openVoiceModal(); };
 document.getElementById('voice-stop').onclick = stopAndProcess;
 document.getElementById('voice-backdrop').onclick = closeVoiceModal;
 document.getElementById('voice-cancel').onclick = closeVoiceModal;
