@@ -3,7 +3,8 @@ export default async function handler(req, res) {
 
   try {
     const { text } = req.body;
-    
+    if (!text) return res.status(400).json({ error: 'No text provided' });
+
     const response = await fetch('https://api.sarvam.ai/text-to-speech', {
       method: 'POST',
       headers: {
@@ -11,18 +12,26 @@ export default async function handler(req, res) {
         'api-subscription-key': process.env.SARVAM_API_KEY
       },
       body: JSON.stringify({
-        inputs: [text.slice(0, 500)],
-        target_language_code: 'hi-IN',
-        speaker: 'meera',
-        model: 'bulbul:v1',
-        enable_preprocessing: true
+        text: text.slice(0, 500),
+        model: 'bulbul:v2',
+        speaker: 'anushka',
+        target_language_code: 'en-IN',
+        enable_preprocessing: true,
+        speech_sample_rate: 22050
       })
     });
 
-    const data = await response.json();
+    const raw = await response.text();
+    console.log('Sarvam TTS status:', response.status, 'body:', raw.slice(0, 200));
+
+    let data;
+    try { data = JSON.parse(raw); } catch(e) { data = {}; }
+
     const audio = data.audios && data.audios[0];
-    return res.status(200).json({ audio: audio || null });
+    return res.status(200).json({ audio: audio || null, error: data.error || null });
+
   } catch (err) {
+    console.error('TTS error:', err);
     return res.status(500).json({ error: err.message });
   }
 }
