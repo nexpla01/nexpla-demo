@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeEzee AI — Powered by Nexpla</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F3F4F6; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+#header { background: #0B6C6C; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo { width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.brand-name { color: #fff; font-weight: 700; font-size: 15px; }
+.brand-sub { color: rgba(255,255,255,0.7); font-size: 11px; }
+.db-tag { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 14px; font-size: 12px; color: #fff; }
+#messages { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.row { display: flex; }
+.row.user { justify-content: flex-end; }
+.row.bot { align-items: flex-start; gap: 10px; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: #0B6C6C; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.bubble { max-width: 580px; border-radius: 18px; font-size: 14px; line-height: 1.5; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.bubble.user { background: #0B6C6C; color: #fff; padding: 10px 16px; border-radius: 18px 18px 4px 18px; }
+.bubble.bot { background: #fff; color: #111; padding: 14px 16px; border-radius: 4px 18px 18px 18px; }
+#suggestions { padding: 0 24px 12px; display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+.chip { background: #fff; color: #0B6C6C; border: 1px solid rgba(11,108,108,0.3); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.chip:hover { background: #0B6C6C; color: #fff; }
+#input-bar { padding: 12px 24px 20px; background: #fff; border-top: 1px solid #E5E7EB; display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+#inp { flex: 1; border: 1.5px solid #E5E7EB; border-radius: 24px; padding: 10px 18px; font-size: 14px; outline: none; font-family: inherit; }
+#inp:focus { border-color: #0B6C6C; }
+#sendbtn { width: 42px; height: 42px; border-radius: 50%; background: #0B6C6C; border: none; cursor: pointer; color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+#sendbtn:disabled { background: #D1D5DB; cursor: default; }
+.dots { display: flex; gap: 5px; padding: 4px 0; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: #0B6C6C; animation: bop 1s infinite; }
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes bop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.scard { background: #fff; border: 1px solid #E5E7EB; border-radius: 10px; padding: 12px 14px; }
+.slbl { font-size: 11px; color: #9CA3AF; margin-bottom: 3px; }
+.sval { font-size: 22px; font-weight: 700; }
+.ssub { font-size: 11px; color: #9CA3AF; }
+.tbl { border: 1px solid #E5E7EB; border-radius: 10px; overflow: hidden; margin: 10px 0; background: #fff; }
+.thd { background: #F9FAFB; border-bottom: 1px solid #E5E7EB; padding: 8px 14px; font-size: 11px; font-weight: 600; color: #6B7280; display: flex; }
+.trow { display: flex; padding: 10px 14px; border-bottom: 1px solid #F9FAFB; align-items: center; }
+.trow:last-child { border: none; }
+.rname { font-size: 13px; font-weight: 500; }
+.rsub { font-size: 11px; color: #9CA3AF; }
+.bdg { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+.red { background: #FEE2E2; color: #991B1B; }
+.grn { background: #D1FAE5; color: #065F46; }
+.ylw { background: #FEF3C7; color: #92400E; }
+.inv { border: 2px solid #0B6C6C; border-radius: 12px; overflow: hidden; margin: 10px 0; }
+.invh { background: #0B6C6C; padding: 12px 16px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+.invb { padding: 14px 16px; }
+.iline { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #F3F4F6; font-size: 13px; }
+.itot { display: flex; justify-content: space-between; padding: 10px 0 0; font-size: 15px; font-weight: 700; border-top: 1px solid #E5E7EB; margin-top: 4px; }
+.acts { display: flex; gap: 8px; margin-top: 10px; }
+.bp { background: #0B6C6C; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 500; }
+.bo { background: #fff; color: #0B6C6C; border: 1px solid #0B6C6C; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 500; }
+.bsm { padding: 4px 10px !important; font-size: 11px !important; }
+.msg { font-size: 14px; color: #374151; line-height: 1.6; margin-bottom: 12px; }
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#D1D5DB;border-radius:3px}
+</style>
+</head>
+<body>
+<div id="header">
+  <div class="brand">
+    <div class="logo">&#128138;</div>
+    <div>
+      <div class="brand-name">TradeEzee AI</div>
+      <div class="brand-sub">Powered by Nexpla</div>
+    </div>
+  </div>
+  <div class="db-tag">ME2627 &middot; FY 2026-27</div>
+</div>
+<div id="messages"></div>
+<div id="suggestions"></div>
+<div id="input-bar">
+  <input id="inp" type="text" placeholder="Ask anything — sales, outstanding, invoices, stock..." />
+  <button id="sendbtn">&#10148;</button>
+</div>
+<script>
+var SYSTEM = "You are an AI assistant inside TradeEzee, a pharma distributor ERP in India. Database: ME2627, FY 2026-27.\n\nReal parties: MANGAL MEDICAL AGENCIES (Dombivli, ph:486955), RAJA MEDICAL STORES (Ulhasnagar, ph:704595), HIRA PHARMA DISTRIBUTORS (Kalyan, ph:300617), HARRIS AGENCY (Dombivli E, ph:433761), METRO MEDICAL AGENCIES (Ulhasnagar, ph:522955), PASBAAN MEDICAL & GENERAL STORES (Kalyan W, ph:208696), SHRI SATYANARAIN PHARMA DIST (Ulhasnagar, ph:551953), RAMDAS PHARMA DISTRIBUTORS PVT. LTD (Shahad, ph:301615), K.DASS PHARMA DISTRIBUTORS PVT. LTD (Shahad, ph:300105), SHAH R KANTILAL & CO. (Kalyan W, ph:315084)\n\nReal products: ANOVATE OINT 20 GM, NASCORE PLUS TAB, ZORPEX 150MG TAB, ZORPEX 75MG TAB, DILOSYN EXPECTORANT 100 ML, DERMONORM 250MG TAB, DILOSYN TAB, ANGINEX 20MG TAB, KAPILIN INJ, MACRABERIN FORTE INJ\n\nRespond with ONLY a JSON object. Always include 'message' (1-2 sentences), 'type', and 'data'.\n\nFor sales questions: type='sales_summary', data={total_bills,total_amount,collected,pending,items:[{party,area,bills,amount}]}\nFor outstanding/overdue: type='outstanding_table', data={total_outstanding,count,items:[{party,area,amount,days_overdue,phone}]}\nFor products/stock: type='product_table', data={items:[{product,company,qty_sold,amount,stock}]}\nFor invoice creation: type='invoice_confirm', data={invoice_no,party,area,items:[{product,qty,rate,amount}],total,gst,net_total}\nFor purchases: type='purchase_summary', data={total_purchases,total_amount,items:[{company,bills,amount,paid,pending}]}\nFor other: type='text'\n\nUse only real party and product names above. Amounts in Indian Rupees.";
+
+var history = [];
+var busy = false;
+
+function fmt(n) {
+  n = Number(n)||0;
+  if(n>=10000000) return '\u20B9'+(n/10000000).toFixed(2)+'Cr';
+  if(n>=100000) return '\u20B9'+(n/100000).toFixed(2)+'L';
+  if(n>=1000) return '\u20B9'+(n/1000).toFixed(1)+'K';
+  return '\u20B9'+n.toFixed(0);
+}
+
+function addBot(html) {
+  var d = document.createElement('div');
+  d.className = 'row bot';
+  d.innerHTML = '<div class="avatar">\uD83E\uDD16</div><div class="bubble bot">'+html+'</div>';
+  document.getElementById('messages').appendChild(d);
+  d.scrollIntoView({behavior:'smooth'});
+}
+
+function addUser(text) {
+  var d = document.createElement('div');
+  d.className = 'row user';
+  d.innerHTML = '<div class="bubble user">'+text+'</div>';
+  document.getElementById('messages').appendChild(d);
+  d.scrollIntoView({behavior:'smooth'});
+}
+
+function showTyping() {
+  var d = document.createElement('div');
+  d.className = 'row bot'; d.id = 'typing';
+  d.innerHTML = '<div class="avatar">\uD83E\uDD16</div><div class="bubble bot"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';
+  document.getElementById('messages').appendChild(d);
+  d.scrollIntoView({behavior:'smooth'});
+}
+
+function hideTyping() { var el=document.getElementById('typing'); if(el) el.remove(); }
+
+function render(p) {
+  var d = p.data||{}, m = p.message||'';
+  if(p.type==='sales_summary') {
+    var rows = (d.items||[]).slice(0,5).map(function(it){ return '<div class="trow" style="justify-content:space-between"><div><div class="rname">'+it.party+'</div><div class="rsub">'+it.area+' &middot; '+it.bills+' bills</div></div><div style="font-size:14px;font-weight:600;color:#0B6C6C">'+fmt(it.amount)+'</div></div>'; }).join('');
+    return '<div class="msg">'+m+'</div><div class="grid2"><div class="scard"><div class="slbl">Total Bills</div><div class="sval">'+(d.total_bills||0)+'</div><div class="ssub">today</div></div><div class="scard"><div class="slbl">Sales Amount</div><div class="sval">'+fmt(d.total_amount)+'</div><div class="ssub">gross</div></div><div class="scard"><div class="slbl">Collected</div><div class="sval" style="color:#059669">'+fmt(d.collected)+'</div><div class="ssub">receipts</div></div><div class="scard"><div class="slbl">Pending</div><div class="sval" style="color:#DC2626">'+fmt(d.pending)+'</div><div class="ssub">outstanding</div></div></div><div class="tbl"><div class="thd" style="justify-content:space-between"><span>TOP PARTIES</span><span>AMOUNT</span></div>'+rows+'</div>';
+  }
+  if(p.type==='outstanding_table') {
+    var rows = (d.items||[]).map(function(it){ return '<div class="trow"><div style="flex:2"><div class="rname">'+it.party+'</div><div class="rsub">'+it.area+' &middot; '+it.phone+'</div></div><div style="flex:1;font-size:13px;font-weight:600;color:#DC2626">'+fmt(it.amount)+'</div><div style="flex:1"><span class="bdg '+(it.days_overdue>45?'red':'ylw')+'">'+it.days_overdue+'d</span></div><div style="width:72px"><button class="bp bsm">Remind</button></div></div>'; }).join('');
+    return '<div class="msg">'+m+'</div><div class="grid2"><div class="scard" style="background:#FEF3C7;border-color:#FCD34D"><div class="slbl" style="color:#92400E">Total Outstanding</div><div class="sval" style="color:#92400E">'+fmt(d.total_outstanding)+'</div></div><div class="scard" style="background:#FEE2E2;border-color:#FCA5A5"><div class="slbl" style="color:#991B1B">Overdue Parties</div><div class="sval" style="color:#991B1B">'+(d.count||0)+'</div></div></div><div class="tbl"><div class="thd"><span style="flex:2">PARTY</span><span style="flex:1">AMOUNT</span><span style="flex:1">OVERDUE</span><span style="width:72px">ACTION</span></div>'+rows+'</div><div class="acts"><button class="bp">Send All Reminders</button><button class="bo">Export</button></div>';
+  }
+  if(p.type==='product_table') {
+    var rows = (d.items||[]).map(function(it){ return '<div class="trow"><div style="flex:2"><div class="rname">'+it.product+'</div><div class="rsub">'+it.company+'</div></div><div style="flex:1;font-size:13px;font-weight:600">'+it.qty_sold+'</div><div style="flex:1;font-size:13px;font-weight:600;color:#0B6C6C">'+fmt(it.amount)+'</div><div style="flex:1"><span class="bdg '+(it.stock<50?'red':'grn')+'">'+it.stock+'</span></div></div>'; }).join('');
+    return '<div class="msg">'+m+'</div><div class="tbl"><div class="thd"><span style="flex:2">PRODUCT</span><span style="flex:1">QTY</span><span style="flex:1">AMOUNT</span><span style="flex:1">STOCK</span></div>'+rows+'</div>';
+  }
+  if(p.type==='invoice_confirm') {
+    var rows = (d.items||[]).map(function(it){ return '<div class="iline"><span><b>'+it.product+'</b> <span style="color:#9CA3AF">&times; '+it.qty+' @ \u20B9'+it.rate+'</span></span><b>'+fmt(it.amount)+'</b></div>'; }).join('');
+    return '<div class="msg">'+m+'</div><div class="inv"><div class="invh"><div><div style="font-size:16px;font-weight:700">Invoice #'+d.invoice_no+'</div><div style="font-size:12px;opacity:0.8">'+d.party+' &middot; '+d.area+'</div></div><span class="bdg" style="background:rgba(255,255,255,0.2);color:#fff">\u2713 Confirmed</span></div><div class="invb">'+rows+'<div class="iline" style="border:none;color:#6B7280"><span>Subtotal</span><span>'+fmt(d.total)+'</span></div><div class="iline" style="border:none;color:#6B7280"><span>GST</span><span>'+fmt(d.gst)+'</span></div><div class="itot"><span>Net Total</span><span style="color:#0B6C6C">'+fmt(d.net_total)+'</span></div></div></div><div class="acts"><button class="bp">Print Invoice</button><button class="bo">Send WhatsApp</button></div>';
+  }
+  if(p.type==='purchase_summary') {
+    var rows = (d.items||[]).map(function(it){ return '<div class="trow" style="justify-content:space-between"><div><div class="rname">'+it.company+'</div><div class="rsub">'+it.bills+' bills</div></div><div style="text-align:right"><div style="font-size:13px;font-weight:600">'+fmt(it.amount)+'</div><div style="font-size:11px;color:'+(it.pending>0?'#DC2626':'#059669')+'">'+(it.pending>0?fmt(it.pending)+' pending':'Fully paid')+'</div></div></div>'; }).join('');
+    return '<div class="msg">'+m+'</div><div class="tbl"><div class="thd" style="justify-content:space-between"><span>COMPANY</span><span>AMOUNT</span></div>'+rows+'</div>';
+  }
+  return '<div style="font-size:14px;line-height:1.6;color:#374151">'+(m||'OK')+'</div>';
+}
+
+function send(txt) {
+  if(busy) return;
+  var text = txt || document.getElementById('inp').value.trim();
+  if(!text) return;
+  document.getElementById('inp').value = '';
+  document.getElementById('suggestions').innerHTML = '';
+  busy = true;
+  document.getElementById('sendbtn').disabled = true;
+  addUser(text);
+  history.push({role:'user', content:text});
+  showTyping();
+
+  fetch('/api/chat', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({system: SYSTEM, messages: history})
+  }).then(function(r){ return r.json(); }).then(function(result) {
+    if(result.error) {
+      hideTyping();
+      addBot('<div style="color:#DC2626">Error: '+(result.error.message||JSON.stringify(result.error))+'</div>');
+      busy=false; document.getElementById('sendbtn').disabled=false;
+      return;
+    }
+    var raw = (result.content&&result.content[0]&&result.content[0].text)||'{}';
+    history.push({role:'assistant', content:raw});
+    var parsed;
+    try { parsed = JSON.parse(raw); } catch(e) { parsed = {type:'text', message:raw}; }
+    hideTyping();
+    addBot(render(parsed));
+    busy=false; document.getElementById('sendbtn').disabled=false;
+  }).catch(function(e) {
+    hideTyping();
+    addBot('<div style="color:#DC2626">Error: '+e.message+'</div>');
+    busy=false; document.getElementById('sendbtn').disabled=false;
+  });
+}
+
+document.getElementById('sendbtn').onclick = function(){ send(); };
+document.getElementById('inp').onkeydown = function(e){ if(e.key==='Enter') send(); };
+
+window.onload = function() {
+  addBot('<div style="font-size:14px;line-height:1.7;color:#374151">Good morning! \uD83D\uDC4B I\'m your AI assistant for <b>TradeEzee</b>.<br>I can pull up sales reports, check outstanding payments, browse stock, and create invoices \u2014 just ask.</div>');
+  var sugs = ["Show me today's sales summary","Which parties have outstanding payments?","Top selling products this month","Create invoice for Hira Pharma Distributors","Show purchases from stockists"];
+  var el = document.getElementById('suggestions');
+  sugs.forEach(function(s){
+    var b = document.createElement('button');
+    b.className='chip'; b.textContent=s;
+    b.onclick=function(){ send(s); };
+    el.appendChild(b);
+  });
+};
+</script>
+</body>
+</html>
