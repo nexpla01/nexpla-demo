@@ -2,19 +2,24 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { text } = req.body || {};
+    const { text, language_code } = req.body || {};
     if (!text) return res.status(400).json({ error: 'No text provided' });
 
     const key = process.env.SARVAM_API_KEY;
     if (!key) return res.status(500).json({ error: 'SARVAM_API_KEY is missing in Vercel' });
 
+    const supported = ['en-IN','hi-IN','mr-IN','kn-IN','ta-IN','te-IN','gu-IN','bn-IN','ml-IN','pa-IN','od-IN'];
+    const lang = supported.includes(language_code) ? language_code : 'en-IN';
+
     const payload = {
-      text: String(text).slice(0, 1500),
+      text: String(text).slice(0, 2500),
       model: 'bulbul:v3',
-      speaker: 'ishita',
-      language_code: 'en-IN',
-      speech_sample_rate: 22050,
+      speaker: 'priya',
+      language_code: lang,
+      speech_sample_rate: 24000,
       output_audio_codec: 'wav',
+      pace: 0.95,
+      temperature: 0.6
     };
 
     const response = await fetch('https://api.sarvam.ai/text-to-speech', {

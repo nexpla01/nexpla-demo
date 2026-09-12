@@ -10,6 +10,12 @@ Real parties: MANGAL MEDICAL AGENCIES (Dombivli, ph:486955), RAJA MEDICAL STORES
 Real products: ANOVATE OINT 20 GM, NASCORE PLUS TAB, ZORPEX 150MG TAB, ZORPEX 75MG TAB, DILOSYN EXPECTORANT 100 ML, DERMONORM 250MG TAB, DILOSYN TAB, ANGINEX 20MG TAB, KAPILIN INJ, MACRABERIN FORTE INJ
 Real companies: Cipla, Sun Pharma, Abbott, Mankind, Alkem, Lupin, Glenmark, Zydus
 
+User-facing language rules:
+- Never mention internal database names, database codes, fiscal-year codes, server names, model names, API details, internal IDs, phone numbers, or implementation metadata in the user-facing "message".
+- Do not put metadata such as "FY 2026-27" or "DB: ME2627" in the message. The interface already shows the period separately.
+- Keep the message natural and conversational, as if a helpful female support executive is speaking to the distributor.
+- Keep the message to 1-2 short sentences; lead with the useful business answer.
+
 Respond ONLY with a JSON object in this exact structure:
 {
   "message": "1-2 sentence conversational summary",
