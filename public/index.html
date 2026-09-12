@@ -144,8 +144,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="bar" style="height:8px"></div>
     </div>
     <div id="voice-status">Listening...</div>
-    <div id="voice-sub">Speak in Hindi or English — I’ll stop automatically when you finish.</div>
-    <button id="voice-stop" style="background:#fff;color:#0B6C6C;border:1px solid #0B6C6C;border-radius:20px;padding:7px 22px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;">Send now</button>
+    <div id="voice-sub">Speak in Hindi or English — I’ll send automatically when you finish speaking.</div>
+    <button id="voice-stop" style="background:#fff;color:#0B6C6C;border:1px solid #0B6C6C;border-radius:20px;padding:7px 22px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;opacity:.65;">Send now</button>
     <button id="voice-cancel">Cancel</button>
     <div id="voice-type-link">Type instead</div>
   </div>
@@ -355,44 +355,18 @@ function setVoiceState(state) {
   voiceModal.className = state ? 'active '+state : 'active';
   var status = document.getElementById('voice-status');
   var sub = document.getElementById('voice-sub');
-  if(state === 'listening') { status.textContent = 'Listening...'; sub.textContent = 'Speak in Hindi or English — I’ll stop automatically when you finish.'; }
+  if(state === 'listening') { status.textContent = 'Listening...'; sub.textContent = 'Speak in Hindi or English — I’ll send automatically when you finish speaking.'; }
   if(state === 'processing') { status.textContent = 'Processing...'; sub.textContent = 'Please wait'; }
 }
 
 function openVoiceModal() {
   if(busy) return;
+  var voiceErr = document.getElementById('voice-error');
+  if(voiceErr) { voiceErr.textContent = ''; voiceErr.style.display = 'none'; }
   voiceModal.classList.add('active');
 
-  // User click unlocks audio before asynchronous Sarvam request.
-  unlockAudio();
-
-  var started = false;
-  function beginRecording() {
-    if(started) return;
-    started = true;
-    startVoiceRecording();
-  }
-
-  fetch('/api/tts', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({text:'How can I help you today?'})
-  }).then(function(r){
-    return r.json().then(function(d){
-      if(!r.ok) throw new Error(sarvamError(d, r.status));
-      return d;
-    });
-  }).then(function(d){
-    return playSarvamAudio(d.audio);
-  }).then(beginRecording)
-    .catch(function(err){
-      console.error('[Sarvam greeting]', err);
-      var voiceErr = document.getElementById('voice-error');
-      if(voiceErr) { voiceErr.textContent = 'Sarvam greeting unavailable: ' + err.message; voiceErr.style.display = 'block'; }
-      beginRecording();
-    });
-
-  setTimeout(beginRecording, 5000);
+  // Do not play a greeting on every mic click. Start listening immediately.
+  startVoiceRecording();
 }
 
 
@@ -414,7 +388,6 @@ function startVoiceRecording() {
   setVoiceState('listening');
   audioChunks = [];
 
-  // Try different mimeTypes for browser compatibility
   var mimeType = 'audio/webm';
   if(!MediaRecorder.isTypeSupported('audio/webm')) {
     if(MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
@@ -422,84 +395,125 @@ function startVoiceRecording() {
   }
 
   navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream) {
-    var options = mimeType ? {mimeType: mimeType} : {};
+    var options = mimeType ? {mimeType:mimeType} : {};
     mediaRecorder = new MediaRecorder(stream, options);
 
-    // Real audio waveform via AudioContext
+    // Voice activity detector. The previous detector created a second AudioContext
+    // but never resumed it, so its analyser could remain suspended and never see speech.
+    var vadCtx = null;
+    var vadTimer = null;
     try {
-      var audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-      var source = audioCtx.createMediaStreamSource(stream);
-      var analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      var dataArray = new Uint8Array(analyser.frequencyBinCount);
-      var timeData = new Uint8Array(analyser.fftSize);
-      var bars = document.querySelectorAll('.bar');
-      var silenceStart = null;
-      var hasSpeech = false;
-      var startedAt = Date.now();
-      var noiseFloor = 0.015;
+      vadCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var resumePromise = vadCtx.state === 'suspended' ? vadCtx.resume() : Promise.resolve();
+      resumePromise.then(function(){
+        var source = vadCtx.createMediaStreamSource(stream);
+        var analyser = vadCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        analyser.smoothingTimeConstant = 0.15;
+        source.connect(analyser);
 
-      function tick() {
-        if(!voiceModal.classList.contains('active')) return;
-        analyser.getByteFrequencyData(dataArray);
-        analyser.getByteTimeDomainData(timeData);
-        // Update bars
-        var step = Math.max(1, Math.floor(dataArray.length / bars.length));
-        bars.forEach(function(bar, i) {
-          var val = dataArray[i * step] || 0;
-          bar.style.height = Math.max(4, Math.min(32, (val/255)*32)) + 'px';
-        });
-        // RMS-based speech detection is much more reliable than average frequency energy.
-        var sumSq = 0;
-        for(var i=0; i<timeData.length; i++) {
-          var normalized = (timeData[i] - 128) / 128;
-          sumSq += normalized * normalized;
-        }
-        var rms = Math.sqrt(sumSq / timeData.length);
-        if(!hasSpeech && Date.now() - startedAt < 900) {
-          noiseFloor = Math.max(noiseFloor * 0.8 + rms * 0.2, 0.008);
-        }
-        var threshold = Math.max(0.025, noiseFloor * 2.2);
-        if(rms > threshold) {
-          hasSpeech = true;
-          silenceStart = null;
-        } else if(hasSpeech && Date.now() - startedAt > 700) {
-          if(!silenceStart) silenceStart = Date.now();
-          // Auto-submit after ~1.25s of real silence.
-          if(Date.now() - silenceStart > 1250) { stopAndProcess(); return; }
-        }
-        setTimeout(tick, 80);
-      }
-      tick();
-    } catch(e) { console.log('AudioContext error:', e); }
+        var timeData = new Float32Array(analyser.fftSize);
+        var bars = document.querySelectorAll('.bar');
+        var startedAt = Date.now();
+        var calibrationUntil = startedAt + 650;
+        var noiseFloor = 0.008;
+        var noisePeak = 0.02;
+        var speechSeenAt = 0;
+        var silenceSince = null;
+        var finished = false;
 
-    mediaRecorder.ondataavailable = function(e) { if(e.data && e.data.size > 0) audioChunks.push(e.data); };
-    
+        function finishAutomatically() {
+          if(finished) return;
+          finished = true;
+          if(vadTimer) { clearTimeout(vadTimer); vadTimer = null; }
+          stopAndProcess();
+        }
+
+        function tick() {
+          if(finished || !voiceModal.classList.contains('active') || !mediaRecorder || mediaRecorder.state === 'inactive') return;
+
+          analyser.getFloatTimeDomainData(timeData);
+          var sumSq = 0;
+          var peak = 0;
+          for(var i=0;i<timeData.length;i++) {
+            var v = Math.abs(timeData[i]);
+            sumSq += v*v;
+            if(v > peak) peak = v;
+          }
+          var rms = Math.sqrt(sumSq / timeData.length);
+
+          // Visual waveform
+          var step = Math.max(1, Math.floor(timeData.length / Math.max(1,bars.length)));
+          bars.forEach(function(bar, i) {
+            var v = Math.abs(timeData[Math.min(timeData.length-1, i*step)] || 0);
+            bar.style.height = Math.max(4, Math.min(32, v*140)) + 'px';
+          });
+
+          var now = Date.now();
+          if(now < calibrationUntil) {
+            noiseFloor = noiseFloor*0.8 + rms*0.2;
+            noisePeak = noisePeak*0.8 + peak*0.2;
+          }
+
+          // Adaptive threshold: speech must be materially above the room/mic noise.
+          var rmsThreshold = Math.max(0.014, noiseFloor*2.2, noiseFloor+0.010);
+          var peakThreshold = Math.max(0.055, noisePeak*2.0);
+          var speechNow = rms > rmsThreshold || peak > peakThreshold;
+
+          if(speechNow) {
+            if(!speechSeenAt) speechSeenAt = now;
+            silenceSince = null;
+          } else if(speechSeenAt && now - speechSeenAt > 180) {
+            if(!silenceSince) silenceSince = now;
+            // Natural conversational turn end: ~1.1 sec of silence.
+            if(now - silenceSince >= 1100) {
+              finishAutomatically();
+              return;
+            }
+          }
+
+          vadTimer = setTimeout(tick, 60);
+        }
+        tick();
+      }).catch(function(e){ console.warn('VAD AudioContext resume failed:', e); });
+    } catch(e) {
+      console.warn('VAD AudioContext error:', e);
+    }
+
+    mediaRecorder.ondataavailable = function(e) {
+      if(e.data && e.data.size > 0) audioChunks.push(e.data);
+    };
+
     mediaRecorder.onstop = function() {
       stream.getTracks().forEach(function(t){ t.stop(); });
+      if(vadTimer) { clearTimeout(vadTimer); vadTimer = null; }
+      if(vadCtx && vadCtx.state !== 'closed') vadCtx.close().catch(function(){});
       if(!voiceModal.classList.contains('active')) return;
+
       setVoiceState('processing');
       document.getElementById('voice-status').textContent = 'Transcribing...';
-      
-      var blob = new Blob(audioChunks, {type: mimeType || 'audio/webm'});
+
+      var blob = new Blob(audioChunks, {type:mimeType || 'audio/webm'});
       console.log('Audio blob size:', blob.size, 'type:', blob.type);
-      
+
       var reader = new FileReader();
       reader.onloadend = function() {
         var base64 = reader.result.split(',')[1];
         fetch('/api/stt', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({audio: base64, language:'hi-IN', mimeType: mimeType||'audio/webm'})
-        }).then(function(r){ return r.json(); }).then(function(data) {
+          body: JSON.stringify({audio:base64, mimeType:mimeType || 'audio/webm'})
+        }).then(function(r){
+          return r.json().then(function(data){
+            if(!r.ok) throw new Error(data.error || ('STT failed (HTTP '+r.status+')'));
+            return data;
+          });
+        }).then(function(data) {
           console.log('STT response:', data);
           if(data.language_code) lastDetectedLanguage = data.language_code;
           closeVoiceModal();
           if(data.transcript && data.transcript.trim()) {
             send(data.transcript.trim());
-          } else if(data.error) {
-            addBot('<div style="color:#DC2626;font-size:13px">STT Error: '+data.error+'</div>');
           } else {
             addBot('<div style="color:#9CA3AF;font-size:13px">Could not hear clearly. Please try again.</div>');
           }
@@ -512,9 +526,8 @@ function startVoiceRecording() {
       reader.readAsDataURL(blob);
     };
 
-    mediaRecorder.start(250); // collect chunks every 250ms
+    mediaRecorder.start(250);
     console.log('Recording started, mimeType:', mediaRecorder.mimeType);
-
   }).catch(function(e) {
     closeVoiceModal();
     console.error('Mic error:', e);

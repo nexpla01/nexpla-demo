@@ -11,15 +11,29 @@ export default async function handler(req, res) {
     const supported = ['en-IN','hi-IN','mr-IN','kn-IN','ta-IN','te-IN','gu-IN','bn-IN','ml-IN','pa-IN','od-IN'];
     const lang = supported.includes(language_code) ? language_code : 'en-IN';
 
+    const speakerByLanguage = {
+      'en-IN': 'ishita',
+      'hi-IN': 'priya',
+      'mr-IN': 'priya',
+      'gu-IN': 'priya',
+      'kn-IN': 'neha',
+      'ta-IN': 'ishita',
+      'te-IN': 'priya',
+      'bn-IN': 'roopa',
+      'ml-IN': 'pooja',
+      'pa-IN': 'roopa',
+      'od-IN': 'ritu'
+    };
+
     const payload = {
       text: String(text).slice(0, 2500),
       model: 'bulbul:v3',
-      speaker: 'priya',
+      speaker: speakerByLanguage[lang] || 'ishita',
       language_code: lang,
       speech_sample_rate: 24000,
       output_audio_codec: 'wav',
-      pace: 0.95,
-      temperature: 0.6
+      pace: 1.1,
+      temperature: 0.55
     };
 
     const response = await fetch('https://api.sarvam.ai/text-to-speech', {
