@@ -2,19 +2,20 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { audio, language, mimeType } = req.body;
+    const { audio, mimeType } = req.body;
     if (!audio) return res.status(400).json({ error: 'No audio provided' });
 
     const audioBuffer = Buffer.from(audio, 'base64');
-    const ext = (mimeType || 'audio/webm').includes('mp4') ? 'mp4' : 'webm';
     const fileType = mimeType || 'audio/webm';
+    const ext = fileType.includes('mp4') ? 'mp4' : 'webm';
 
-    // Use native FormData (Node 18+, no imports needed)
+    // Native FormData - no imports needed in Node 18+
     const form = new FormData();
     const blob = new Blob([audioBuffer], { type: fileType });
     form.append('file', blob, `audio.${ext}`);
-    form.append('language_code', language || 'hi-IN');
-    form.append('model', 'saarika:v2');
+    form.append('model', 'saaras:v3');
+    form.append('mode', 'transcribe');
+    form.append('language_code', 'unknown'); // auto-detect Hindi or English
 
     const response = await fetch('https://api.sarvam.ai/speech-to-text', {
       method: 'POST',
@@ -28,9 +29,9 @@ export default async function handler(req, res) {
     let data;
     try { data = JSON.parse(text); } catch(e) { data = {}; }
 
-    return res.status(200).json({
-      transcript: data.transcript || data.text || data.display_text || ''
-    });
+    const transcript = data.transcript || data.text || data.display_text || '';
+    return res.status(200).json({ transcript });
+
   } catch (err) {
     console.error('STT error:', err);
     return res.status(500).json({ error: err.message });
