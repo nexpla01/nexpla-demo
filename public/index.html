@@ -300,9 +300,17 @@ function openVoiceModal() {
   }).then(function(r){ return r.json(); }).then(function(d) {
     if(d.audio) {
       var audio = new Audio('data:audio/wav;base64,'+d.audio);
-      audio.play().then(function() {
-        audio.onended = function() { startVoiceRecording(); };
-      }).catch(function() { startVoiceRecording(); });
+      var started = false;
+      function beginRecording() {
+        if(started) return;
+        started = true;
+        startVoiceRecording();
+      }
+      audio.onended = beginRecording;
+      audio.onerror = beginRecording;
+      // Fallback: start recording after 3s regardless
+      setTimeout(beginRecording, 3000);
+      audio.play().catch(beginRecording);
     } else {
       startVoiceRecording();
     }
