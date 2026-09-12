@@ -218,21 +218,35 @@ function playAudio(base64) {
   } catch(e){}
 }
 
+var SARVAM_KEY = 'sk_jqlbzqae_Tt8Qgp6EoZklEW1vK1Ot10zt';
+
 function speakMessage(text) {
   if(!text) return;
-  // Try Sarvam TTS first, fallback to browser speech synthesis
-  fetch('/api/tts', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({text: text})
+  fetch('https://api.sarvam.ai/text-to-speech', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-subscription-key': SARVAM_KEY
+    },
+    body: JSON.stringify({
+      text: text.slice(0, 500),
+      model: 'bulbul:v2',
+      speaker: 'anushka',
+      target_language_code: 'en-IN',
+      enable_preprocessing: true,
+      speech_sample_rate: 22050
+    })
   }).then(function(r){ return r.json(); }).then(function(d){
-    if(d.audio) {
-      playAudio(d.audio);
+    console.log('TTS response:', JSON.stringify(d).slice(0,100));
+    if(d.audios && d.audios[0]) {
+      playAudio(d.audios[0]);
     } else {
-      // Fallback: browser built-in TTS
       browserSpeak(text);
     }
-  }).catch(function(){ browserSpeak(text); });
+  }).catch(function(e){ 
+    console.log('TTS error:', e);
+    browserSpeak(text); 
+  });
 }
 
 function browserSpeak(text) {
@@ -241,7 +255,6 @@ function browserSpeak(text) {
   var utt = new SpeechSynthesisUtterance(text);
   utt.lang = 'en-IN';
   utt.rate = 1.0;
-  utt.pitch = 1.0;
   window.speechSynthesis.speak(utt);
 }
 
@@ -312,13 +325,13 @@ function openVoiceModal() {
   if(busy) return;
   voiceModal.classList.add('active');
   // Play greeting first, then start recording
-  fetch('/api/tts', {
+  fetch('https://api.sarvam.ai/text-to-speech', {
     method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({text: 'How can I help you today?'})
+    headers:{'Content-Type':'application/json','api-subscription-key':SARVAM_KEY},
+    body: JSON.stringify({text:'How can I help you today?',model:'bulbul:v2',speaker:'anushka',target_language_code:'en-IN',enable_preprocessing:true,speech_sample_rate:22050})
   }).then(function(r){ return r.json(); }).then(function(d) {
-    if(d.audio) {
-      var audio = new Audio('data:audio/wav;base64,'+d.audio);
+    if(d.audios && d.audios[0]) {
+      var audio = new Audio('data:audio/wav;base64,'+d.audios[0]);
       var started = false;
       function beginRecording() {
         if(started) return;
