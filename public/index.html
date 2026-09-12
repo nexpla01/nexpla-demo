@@ -148,7 +148,6 @@ function send(txt) {
   var text = txt || document.getElementById('inp').value.trim();
   if(!text) return;
   document.getElementById('inp').value = '';
-  document.getElementById('suggestions').innerHTML = '';
   busy = true;
   document.getElementById('sendbtn').disabled = true;
   addUser(text);

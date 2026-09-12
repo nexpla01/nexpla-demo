@@ -20,6 +20,16 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+
+    // Strip markdown code fences if model wraps response in ```json ... ```
+    if (data.content && data.content[0] && data.content[0].text) {
+      data.content[0].text = data.content[0].text
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+    }
+
     return res.status(200).json(data);
   } catch (err) {
     return res.status(500).json({ error: err.message });
